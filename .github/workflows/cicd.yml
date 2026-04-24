@@ -1,0 +1,44 @@
+name: CI/CD kbot
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        run: echo "SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build & Push image
+        run: |
+          docker buildx create --use
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ghcr.io/rudikoll/kbot:v1.0.0-${SHA}-linux-amd64 \
+            --push .
+
+      - name: Update Helm values
+        run: |
+          sed -i "s/tag:.*/tag: v1.0.0-${SHA}-linux-amd64/" helm/values.yaml
+
+      - name: Commit Helm changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add helm/values.yaml
+          git commit -m "update image tag ${SHA}" || exit 0
+          git push
