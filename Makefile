@@ -18,6 +18,6 @@ docker-push:
 	docker push $(IMAGE)
 
 helm-update:
-	sed -i "s/tag:.*/tag: \"$(TAG)\"/" helm/kbot/values.yaml
+	sed -i '' "s/tag:.*/tag: \"$(TAG)\"/" helm/kbot/values.yaml
 
 all: docker-build docker-push helm-update
