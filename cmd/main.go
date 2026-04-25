@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -13,5 +14,7 @@ func main() {
 
 	log.Println("Bot started")
 
-	select {}
+	for {
+		time.Sleep(time.Hour)
+	}
 }
