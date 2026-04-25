@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY: ${{ github.repository_owner }}/kbot
+  REPOSITORY: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -42,8 +42,10 @@ jobs:
           APP_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
           SHORT_SHA=$(git rev-parse --short HEAD)
           TAG="${APP_VERSION}-${SHORT_SHA}"
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "version=${TAG}" >> $GITHUB_OUTPUT
-          echo "Generated tag: ${TAG}"
+          echo "repo=${REPO}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}, repo: ${REPO}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -52,8 +54,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}-linux-amd64
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+            ghcr.io/${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.version }}-linux-amd64
+            ghcr.io/${{ steps.meta.outputs.repo }}:latest
           build-args: |
             TARGETOS=linux
             TARGETARCH=amd64
@@ -86,16 +88,3 @@ jobs:
           git add helm/values.yaml
           git commit -m "ci: update image tag to ${{ needs.build-and-push.outputs.image_tag }}" || echo "No changes to commit"
           git push
-
-  deploy-argocd:
-    name: Sync ArgoCD Application
-    runs-on: ubuntu-latest
-    needs: update-helm
-
-    steps:
-      - name: Trigger ArgoCD Sync
-        run: |
-          echo "ArgoCD will auto-sync from the updated Helm values."
-          echo "Image: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ needs.build-and-push.outputs.image_tag }}-linux-amd64"
-        env:
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
