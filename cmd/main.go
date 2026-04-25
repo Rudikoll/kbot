@@ -12,4 +12,6 @@ func main() {
 	}
 
 	log.Println("Bot started")
+
+	select {}
 }
