@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  registry: "ghcr.io"
+  repository: "rudikoll/kbot"
+  tag: "v1.0.0-latest"
+  os: linux
+  arch: amd64
+  pullPolicy: IfNotPresent
+
+env:
+  - name: TELE_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: kbot-secret
+        key: token
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
